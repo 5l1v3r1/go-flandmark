@@ -31,8 +31,9 @@ void * flandmark_binding_cascade_load(const char * filename) {
   return (void *)cvLoad(filename, 0, 0, 0);
 }
 
-void * flandmark_binding_cascade_detect_objects(void * image, void * cascade,
-  double factor, int minNeighbors, int minWidth, int minHeight, int maxWidth, int maxHeight) {
+void * flandmark_binding_cascade_detect_objects(void * cascade, void * image,
+  double factor, int minNeighbors, int minWidth, int minHeight, int maxWidth,
+  int maxHeight) {
   IplImage * i = (IplImage *)image;
   CvHaarClassifierCascade * c = (CvHaarClassifierCascade *)cascade;
   CvMemStorage * storage = cvCreateMemStorage(0);

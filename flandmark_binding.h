@@ -14,7 +14,7 @@ void * flandmark_binding_image_gray(const uint8_t * gray, int width,
 void flandmark_binding_image_free(void * image);
 
 void * flandmark_binding_cascade_load(const char * filename);
-void * flandmark_binding_cascade_detect_objects(void * image, void * cascade,
+void * flandmark_binding_cascade_detect_objects(void * cascade, void * image,
   double factor, int minNeighbors, int minWidth, int minHeight, int maxWidth, int maxHeight);
 void flandmark_binding_cascade_free(void * cascade);
 
