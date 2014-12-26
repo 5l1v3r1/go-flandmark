@@ -1,8 +1,9 @@
 package flandmark
 
 // #include "flandmark_binding.h"
-// #cgo CXXFLAGS: -I/usr/local/include/opencv -I/usr/include/opencv -Wall
-// #cgo LDFLAGS: -lopencv_core -lopencv_imgproc -lopencv_objdetect
+// #cgo linux  pkg-config: opencv
+// #cgo darwin pkg-config: opencv
+// #cgo windows LDFLAGS: -lopencv_core242.dll -lopencv_imgproc242.dll -lopencv_photo242.dll -lopencv_highgui242.dll -lstdc++
 import "C"
 
 import (
