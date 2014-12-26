@@ -26,6 +26,8 @@ func LoadCascade(path string) (*Cascade, error) {
 	return res, nil
 }
 
+// Detect uses the Haar cascade to detect objects and returns a list of
+// rectangles for those objects.
 func (c *Cascade) Detect(img *Image, factor float64, minNeighbors int,
 	minSize Size, maxSize Size) ([]Rect, error) {
 	if !c.valid() || !img.valid() {
@@ -61,7 +63,7 @@ type Image struct {
 // NewRGBAImage creates an image from raw RGBA data.
 // The image will automatically be freed.
 func NewRGBAImage(data []byte, width int, height int) (*Image, error) {
-	if len(data) != 4 * width * height {
+	if len(data) != 4*width*height {
 		return nil, ErrDataSize
 	}
 	buffer := (*C.uint8_t)(unsafe.Pointer(&data[0]))
@@ -74,7 +76,7 @@ func NewRGBAImage(data []byte, width int, height int) (*Image, error) {
 // NewGrayImage creates an image from raw grayscale data.
 // The image will automatically be freed.
 func NewGrayImage(data []byte, width int, height int) (*Image, error) {
-	if len(data) != width * height {
+	if len(data) != width*height {
 		return nil, ErrDataSize
 	}
 	buffer := (*C.uint8_t)(unsafe.Pointer(&data[0]))
@@ -97,6 +99,7 @@ type Model struct {
 	pointer unsafe.Pointer
 }
 
+// LoadModel loads a model from a path and returns it.
 func LoadModel(path string) (*Model, error) {
 	ptr := C.flandmark_binding_model_init(C.CString(path))
 	if ptr == nil {
@@ -107,12 +110,13 @@ func LoadModel(path string) (*Model, error) {
 	return res, nil
 }
 
+// Detect detects landmarks within a given box inside an image.
 func (m *Model) Detect(img *Image, box Rect) ([]Point, error) {
 	if !m.valid() || !img.valid() {
 		return nil, ErrBadArgument
 	}
 	pointCount := int(C.flandmark_binding_model_M(m.pointer))
-	data := make([]C.double, pointCount * 2)
+	data := make([]C.double, pointCount*2)
 	boxList := box.CList()
 	ret := C.flandmark_binding_model_detect(m.pointer, img.pointer, &data[0],
 		&boxList[0])
@@ -121,11 +125,11 @@ func (m *Model) Detect(img *Image, box Rect) ([]Point, error) {
 	} else if ret == 2 {
 		return nil, ErrDetect
 	}
-	
+
 	// Convert the data points
-	res := make([]Point, len(data) / 2)
+	res := make([]Point, len(data)/2)
 	for i := 0; i < len(data); i += 2 {
-		res[i] = Point{int(data[i]), int(data[i + 1])}
+		res[i] = Point{int(data[i]), int(data[i+1])}
 	}
 	return res, nil
 }
@@ -138,25 +142,30 @@ func (m *Model) valid() bool {
 	return m != nil && m.pointer != nil
 }
 
+// Point is a two-dimensional integral Euclidean coordinate.
 type Point struct {
 	X int
 	Y int
 }
 
+// Rect is a two-dimensional integral rectangle.
 type Rect struct {
 	Point Point
 	Size  Size
 }
 
+// NewRectFromC creates a rectangle from a C array [x, y, width, height].
 func NewRectFromC(l [4]C.int) Rect {
 	return Rect{Point{int(l[0]), int(l[1])}, Size{int(l[2]), int(l[3])}}
 }
 
+// CList creates a C array of the form [x, y, width, height].
 func (r Rect) CList() [4]C.int {
 	return [4]C.int{C.int(r.Point.X), C.int(r.Point.Y), C.int(r.Size.Width),
 		C.int(r.Size.Height)}
 }
 
+// Size is a two-dimensional integral rectangular size.
 type Size struct {
 	Width  int
 	Height int
