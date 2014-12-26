@@ -1,26 +1,24 @@
 #include "flandmark_binding.h"
 #include <flandmark_detector.h>
+#include <string.h>
 
 typedef struct {
   CvMemStorage * storage;
   CvSeq * rects;
 } rects_list;
 
-void * flandmark_binding_image_load(const char * filename) {
-  return (void *)cvLoadImage(filename);
-}
-
 void * flandmark_binding_image_rgba(const uint8_t * rgba, int width,
                                     int height) {
   IplImage * img = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 4);
-  cvSetData(img, buffer, img->widthStep);
+  memcpy((void *)img->imageData, (void *)rgba,
+    (size_t)width * (size_t)height * 4);
   return (void *)img;
 }
 
 void * flandmark_binding_image_gray(const uint8_t * gray, int width,
                                     int height) {
   IplImage * img = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 1);
-  cvSetData(img, buffer, img->widthStep);
+  memcpy((void *)img->imageData, (void *)gray, (size_t)width * (size_t)height);
   return (void *)img;
 }
 
@@ -48,7 +46,7 @@ void * flandmark_binding_cascade_detect_objects(void * image, void * cascade,
   return (void *)res;
 }
 
-void * flandmark_binding_cascade_free(void * cascade) {
+void flandmark_binding_cascade_free(void * cascade) {
   CvHaarClassifierCascade * c = (CvHaarClassifierCascade *)cascade;
   cvReleaseHaarClassifierCascade(&c);
 }
@@ -73,9 +71,22 @@ void flandmark_binding_rects_free(void * rects) {
   delete list;
 }
 
-void * flandmark_binding_model_init(const char * filename);
-void * flandmark_binding_model_free(void * model);
-uint8_t flandmark_binding_model_M(void * model);
+void * flandmark_binding_model_init(const char * filename) {
+  return (void *)flandmark_init(filename);
+}
+
+void flandmark_binding_model_free(void * model) {
+  flandmark_free((FLANDMARK_Model *)model);
+}
+
+uint8_t flandmark_binding_model_M(void * model) {
+  FLANDMARK_Model * m = (FLANDMARK_Model *)model;
+  return m->data.options.M;
+}
+
 int flandmark_binding_model_detect(void * model, void * image,
-  double * landmarks, int * box, int * bwMargin);
+  double * landmarks, int * box, int * bwMargin) {
+  FLANDMARK_Model * m = (FLANDMARK_Model *)model;
+  return flandmark_detect((IplImage *)image, box, m, landmarks, bwMargin);
+}
 
