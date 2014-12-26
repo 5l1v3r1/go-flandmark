@@ -31,7 +31,7 @@ func errMain() error {
 	if err != nil {
 		return err
 	}
-	img, err := flandmark.ConvertGray(input)
+	img, err := flandmark.GoGrayImage(input)
 	if err != nil {
 		return err
 	}
