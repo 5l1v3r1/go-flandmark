@@ -86,8 +86,8 @@ uint8_t flandmark_binding_model_M(void * model) {
 }
 
 int flandmark_binding_model_detect(void * model, void * image,
-  double * landmarks, int * box, int * bwMargin) {
+  double * landmarks, int * box) {
   FLANDMARK_Model * m = (FLANDMARK_Model *)model;
-  return flandmark_detect((IplImage *)image, box, m, landmarks, bwMargin);
+  return flandmark_detect((IplImage *)image, box, m, landmarks);
 }
 

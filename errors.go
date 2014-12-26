@@ -3,6 +3,9 @@ package flandmark
 import "errors"
 
 var (
-	ErrCouldNotLoad = errors.New("Could not load Haar cascade.")
-	ErrDataSize     = errors.New("Unexpected data size.")
+	ErrBadArgument  = errors.New("Invalid argument.")
+	ErrCouldNotLoad = errors.New("Could not load file.")
+	ErrDataSize     = errors.New("Got unexpected data size.")
+	ErrDetect       = errors.New("Failed to detect.")
+	ErrNormalize    = errors.New("Failed to normalize.")
 )

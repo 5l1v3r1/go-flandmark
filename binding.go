@@ -27,9 +27,9 @@ func LoadCascade(path string) (*Cascade, error) {
 }
 
 func (c *Cascade) Detect(img *Image, factor float64, minNeighbors int,
-	minSize Size, maxSize Size) []Rect {
+	minSize Size, maxSize Size) ([]Rect, error) {
 	if !c.valid() || !img.valid() {
-		return nil
+		return nil, ErrBadArgument
 	}
 	rects := C.flandmark_binding_cascade_detect_objects(c.pointer, img.pointer,
 		C.double(factor), C.int(minNeighbors), C.int(minSize.Width),
@@ -39,11 +39,10 @@ func (c *Cascade) Detect(img *Image, factor float64, minNeighbors int,
 	for i := 0; i < count; i++ {
 		var resList [4]C.int
 		C.flandmark_binding_rects_get(rects, C.int(i), &resList[0])
-		list[i] = Rect{Point{int(resList[0]), int(resList[1])},
-			Size{int(resList[2]), int(resList[3])}}
+		list[i] = NewRectFromC(resList)
 	}
 	C.flandmark_binding_rects_free(rects)
-	return list
+	return list, nil
 }
 
 func (c *Cascade) free() {
@@ -93,6 +92,52 @@ func (i *Image) valid() bool {
 	return i != nil && i.pointer != nil
 }
 
+// Model represents the FLANDMARK_Model type.
+type Model struct {
+	pointer unsafe.Pointer
+}
+
+func LoadModel(path string) (*Model, error) {
+	ptr := C.flandmark_binding_model_init(C.CString(path))
+	if ptr == nil {
+		return nil, ErrCouldNotLoad
+	}
+	res := &Model{ptr}
+	runtime.SetFinalizer(res, res.free)
+	return res, nil
+}
+
+func (m *Model) Detect(img *Image, box Rect) ([]Point, error) {
+	if !m.valid() || !img.valid() {
+		return nil, ErrBadArgument
+	}
+	pointCount := int(C.flandmark_binding_model_M(m.pointer))
+	data := make([]C.double, pointCount * 2)
+	boxList := box.CList()
+	ret := C.flandmark_binding_model_detect(m.pointer, img.pointer, &data[0],
+		&boxList[0])
+	if ret == 1 {
+		return nil, ErrNormalize
+	} else if ret == 2 {
+		return nil, ErrDetect
+	}
+	
+	// Convert the data points
+	res := make([]Point, len(data) / 2)
+	for i := 0; i < len(data); i += 2 {
+		res[i] = Point{int(data[i]), int(data[i + 1])}
+	}
+	return res, nil
+}
+
+func (m *Model) free() {
+	C.flandmark_binding_model_free(m.pointer)
+}
+
+func (m *Model) valid() bool {
+	return m != nil && m.pointer != nil
+}
+
 type Point struct {
 	X int
 	Y int
@@ -101,6 +146,15 @@ type Point struct {
 type Rect struct {
 	Point Point
 	Size  Size
+}
+
+func NewRectFromC(l [4]C.int) Rect {
+	return Rect{Point{int(l[0]), int(l[1])}, Size{int(l[2]), int(l[3])}}
+}
+
+func (r Rect) CList() [4]C.int {
+	return [4]C.int{C.int(r.Point.X), C.int(r.Point.Y), C.int(r.Size.Width),
+		C.int(r.Size.Height)}
 }
 
 type Size struct {

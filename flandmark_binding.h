@@ -26,7 +26,7 @@ void * flandmark_binding_model_init(const char * filename);
 void flandmark_binding_model_free(void * model);
 uint8_t flandmark_binding_model_M(void * model);
 int flandmark_binding_model_detect(void * model, void * image,
-  double * landmarks, int * box, int * bwMargin);
+  double * landmarks, int * box);
 
 #ifdef __cplusplus
 }
