@@ -7,6 +7,7 @@ package flandmark
 import "C"
 
 import (
+	"path/filepath"
 	"runtime"
 	"unsafe"
 )
@@ -25,6 +26,14 @@ func LoadCascade(path string) (*Cascade, error) {
 	res := &Cascade{ptr}
 	runtime.SetFinalizer(res, freeCascade)
 	return res, nil
+}
+
+// LoadFaceCascade loads the default frontalface cascade.
+func LoadFaceCascade() (*Cascade, error) {
+	_, file, _, _ := runtime.Caller(0)
+	path := filepath.Join(filepath.Dir(file), "defaults",
+		"haarcascade_frontalface_alt.xml")
+	return LoadCascade(path)
 }
 
 // Detect uses the Haar cascade to detect objects and returns a list of
@@ -106,6 +115,13 @@ type Model struct {
 	pointer unsafe.Pointer
 }
 
+// LoadDefaultModel loads the default model for detecting facial features.
+func LoadDefaultModel() (*Model, error) {
+	_, file, _, _ := runtime.Caller(0)
+	path := filepath.Join(filepath.Dir(file), "defaults", "flandmark_model.dat")
+	return LoadModel(path)
+}
+
 // LoadModel loads a model from a path and returns it.
 func LoadModel(path string) (*Model, error) {
 	ptr := C.flandmark_binding_model_init(C.CString(path))
@@ -135,8 +151,8 @@ func (m *Model) Detect(img *Image, box Rect) ([]Point, error) {
 
 	// Convert the data points
 	res := make([]Point, len(data)/2)
-	for i := 0; i < len(data); i += 2 {
-		res[i] = Point{int(data[i]), int(data[i+1])}
+	for i := 0; i < len(data) - 1; i += 2 {
+		res[i / 2] = Point{int(data[i]), int(data[i+1])}
 	}
 	return res, nil
 }
@@ -166,10 +182,10 @@ func NewRectFromC(l [4]C.int) Rect {
 	return Rect{Point{int(l[0]), int(l[1])}, Size{int(l[2]), int(l[3])}}
 }
 
-// CList creates a C array of the form [x, y, width, height].
+// CList creates a C array of the form [x, y, x+width, x+height].
 func (r Rect) CList() [4]C.int {
-	return [4]C.int{C.int(r.Point.X), C.int(r.Point.Y), C.int(r.Size.Width),
-		C.int(r.Size.Height)}
+	return [4]C.int{C.int(r.Point.X), C.int(r.Point.Y),
+		C.int(r.Point.X + r.Size.Width), C.int(r.Point.Y + r.Size.Height)}
 }
 
 // Size is a two-dimensional integral rectangular size.

@@ -12,7 +12,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "Usage: censor <input_file>")
+		fmt.Fprintln(os.Stderr, "Usage: faces <input_file>")
 		os.Exit(1)
 	}
 	if err := errMain(); err != nil {
