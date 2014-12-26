@@ -6,8 +6,8 @@ This is a Go binding for [flandmark](http://cmp.felk.cvut.cz/~uricamic/flandmark
 
 Installing **go-flandmark** is not as involved as you might fear. It really only takes a few commands:
 
-    go get github.com/unixpickle/go-flandmark
-    cd $GOPATH/github.com/unixpickle/go-flandmark
+    git clone https://github.com/unixpickle/go-flandmark.git $GOPATH/src/github.com/unixpickle/go-flandmark
+    cd $GOPATH/src/github.com/unixpickle/go-flandmark
     make
 
 Assuming you already have OpenCV installed and are connected to the internet, the above should work perfectly.
