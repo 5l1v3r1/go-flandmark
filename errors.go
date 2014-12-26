@@ -8,4 +8,5 @@ var (
 	ErrDataSize     = errors.New("Got unexpected data size.")
 	ErrDetect       = errors.New("Failed to detect.")
 	ErrNormalize    = errors.New("Failed to normalize.")
+	ErrUnknown      = errors.New("Unknown error.")
 )

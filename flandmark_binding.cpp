@@ -1,6 +1,7 @@
 #include "flandmark_binding.h"
-#include <flandmark_detector.h>
+#include "flandmark_detector.h"
 #include <string.h>
+#include <stdio.h>
 
 typedef struct {
   CvMemStorage * storage;
@@ -9,7 +10,10 @@ typedef struct {
 
 void * flandmark_binding_image_rgba(const uint8_t * rgba, int width,
                                     int height) {
-  IplImage * img = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 4);
+  IplImage * img = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 4);
+  if (!img) {
+    return NULL;
+  }
   memcpy((void *)img->imageData, (void *)rgba,
     (size_t)width * (size_t)height * 4);
   return (void *)img;
@@ -17,7 +21,10 @@ void * flandmark_binding_image_rgba(const uint8_t * rgba, int width,
 
 void * flandmark_binding_image_gray(const uint8_t * gray, int width,
                                     int height) {
-  IplImage * img = cvCreateImageHeader(cvSize(width, height), IPL_DEPTH_8U, 1);
+  IplImage * img = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
+  if (!img) {
+    return NULL;
+  }
   memcpy((void *)img->imageData, (void *)gray, (size_t)width * (size_t)height);
   return (void *)img;
 }

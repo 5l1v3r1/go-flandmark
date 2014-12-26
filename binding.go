@@ -1,8 +1,8 @@
 package flandmark
 
 // #include "flandmark_binding.h"
-// #cgo CXXFLAGS: -Iflandmark/libflandmark -I/usr/local/include/opencv -I/usr/include/opencv
-// #cgo LDFLAGS: -lopencv_core -lopencv_imgproc -lopencv_objdetect flandmark/libflandmark/libflandmark_static.a
+// #cgo CXXFLAGS: -I/usr/local/include/opencv -I/usr/include/opencv -Wall
+// #cgo LDFLAGS: -lopencv_core -lopencv_imgproc -lopencv_objdetect
 import "C"
 
 import (
@@ -22,7 +22,7 @@ func LoadCascade(path string) (*Cascade, error) {
 		return nil, ErrCouldNotLoad
 	}
 	res := &Cascade{ptr}
-	runtime.SetFinalizer(res, res.free)
+	runtime.SetFinalizer(res, freeCascade)
 	return res, nil
 }
 
@@ -47,12 +47,12 @@ func (c *Cascade) Detect(img *Image, factor float64, minNeighbors int,
 	return list, nil
 }
 
-func (c *Cascade) free() {
-	C.flandmark_binding_cascade_free(c.pointer)
-}
-
 func (c *Cascade) valid() bool {
 	return c != nil && c.pointer != nil
+}
+
+func freeCascade(c *Cascade) {
+	C.flandmark_binding_cascade_free(c.pointer)
 }
 
 // Image is an OpenCV-compatible image.
@@ -68,8 +68,11 @@ func NewRGBAImage(data []byte, width int, height int) (*Image, error) {
 	}
 	buffer := (*C.uint8_t)(unsafe.Pointer(&data[0]))
 	v := C.flandmark_binding_image_rgba(buffer, C.int(width), C.int(height))
+	if v == nil {
+		return nil, ErrUnknown
+	}
 	res := &Image{v}
-	runtime.SetFinalizer(res, res.free)
+	runtime.SetFinalizer(res, freeImage)
 	return res, nil
 }
 
@@ -81,17 +84,20 @@ func NewGrayImage(data []byte, width int, height int) (*Image, error) {
 	}
 	buffer := (*C.uint8_t)(unsafe.Pointer(&data[0]))
 	v := C.flandmark_binding_image_gray(buffer, C.int(width), C.int(height))
+	if v == nil {
+		return nil, ErrUnknown
+	}
 	res := &Image{v}
-	runtime.SetFinalizer(res, res.free)
+	runtime.SetFinalizer(res, freeImage)
 	return res, nil
-}
-
-func (i *Image) free() {
-	C.flandmark_binding_image_free(i.pointer)
 }
 
 func (i *Image) valid() bool {
 	return i != nil && i.pointer != nil
+}
+
+func freeImage(i *Image) {
+	C.flandmark_binding_image_free(i.pointer)
 }
 
 // Model represents the FLANDMARK_Model type.
@@ -106,7 +112,7 @@ func LoadModel(path string) (*Model, error) {
 		return nil, ErrCouldNotLoad
 	}
 	res := &Model{ptr}
-	runtime.SetFinalizer(res, res.free)
+	runtime.SetFinalizer(res, freeModel)
 	return res, nil
 }
 
@@ -134,12 +140,12 @@ func (m *Model) Detect(img *Image, box Rect) ([]Point, error) {
 	return res, nil
 }
 
-func (m *Model) free() {
-	C.flandmark_binding_model_free(m.pointer)
-}
-
 func (m *Model) valid() bool {
 	return m != nil && m.pointer != nil
+}
+
+func freeModel(m *Model) {
+	C.flandmark_binding_model_free(m.pointer)
 }
 
 // Point is a two-dimensional integral Euclidean coordinate.
