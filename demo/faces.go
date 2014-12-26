@@ -35,7 +35,7 @@ func errMain() error {
 	if err != nil {
 		return err
 	}
-	cascade, err := flandmark.LoadCascade("haarcascade_frontalface_alt.xml")
+	cascade, err := flandmark.LoadFaceCascade()
 	if err != nil {
 		return err
 	}
