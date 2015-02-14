@@ -31,3 +31,7 @@ To create a `Model`, you will pretty much always use `LoadDefaultModel()`. It wi
 To create an `Image`, you will pretty much always use `GoGrayImage(image.Image)` to convert Go image types to `Image` objects.
 
 Once you have all of these objects created, you will use the `Cascade` to iterate through faces and the `Model` to find landmarks in those faces.
+
+# TODO
+
+Use some sort of asset->source utility to package the default cascade and model into the code itself.

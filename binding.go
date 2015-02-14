@@ -116,6 +116,10 @@ type Model struct {
 }
 
 // LoadDefaultModel loads the default model for detecting facial features.
+// When this model runs on a face, it will return points which represent the
+// following facial features, in this order: top of the nose; right side of
+// left eye; left side of right eye; left corner of mouth; right corner of
+// mouth; left side of left eye; right side of right eye; bottom of the nose.
 func LoadDefaultModel() (*Model, error) {
 	_, file, _, _ := runtime.Caller(0)
 	path := filepath.Join(filepath.Dir(file), "defaults", "flandmark_model.dat")
