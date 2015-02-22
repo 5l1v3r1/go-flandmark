@@ -34,4 +34,5 @@ Once you have all of these objects created, you will use the `Cascade` to iterat
 
 # TODO
 
-Use some sort of asset->source utility to package the default cascade and model into the code itself.
+ * Do not pass Go pointers int oC
+ * Use some sort of asset->source utility to package the default cascade and model into the code itself.
