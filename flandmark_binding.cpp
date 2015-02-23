@@ -8,24 +8,25 @@ typedef struct {
   CvSeq * rects;
 } rects_list;
 
-void * flandmark_binding_image_rgba(const uint8_t * rgba, int width,
-                                    int height) {
+void * flandmark_binding_image_rgba(void * rgba, int width, int height) {
   IplImage * img = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 4);
   if (!img) {
+    free(rgba);
     return NULL;
   }
-  memcpy((void *)img->imageData, (void *)rgba,
-    (size_t)width * (size_t)height * 4);
+  memcpy((void *)img->imageData, rgba, (size_t)width * (size_t)height * 4);
+  free(rgba);
   return (void *)img;
 }
 
-void * flandmark_binding_image_gray(const uint8_t * gray, int width,
-                                    int height) {
+void * flandmark_binding_image_gray(void * gray, int width, int height) {
   IplImage * img = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
   if (!img) {
+    free(gray);
     return NULL;
   }
-  memcpy((void *)img->imageData, (void *)gray, (size_t)width * (size_t)height);
+  memcpy((void *)img->imageData, gray, (size_t)width * (size_t)height);
+  free(gray);
   return (void *)img;
 }
 
@@ -34,8 +35,10 @@ void flandmark_binding_image_free(void * image) {
   cvReleaseImage(&frame);
 }
 
-void * flandmark_binding_cascade_load(const char * filename) {
-  return (void *)cvLoad(filename, 0, 0, 0);
+void * flandmark_binding_cascade_load(char * filename) {
+  void * res = (void *)cvLoad(filename, 0, 0, 0);
+  free(filename);
+  return res;
 }
 
 void * flandmark_binding_cascade_detect_objects(void * cascade, void * image,
@@ -64,13 +67,12 @@ int flandmark_binding_rects_count(void * rects) {
   return list->rects->total;
 }
 
-void flandmark_binding_rects_get(void * rects, int idx, int * xywh) {
+Rectangle flandmark_binding_rects_get(void * rects, int idx) {
   rects_list * list = (rects_list *)rects;
   CvRect * r = (CvRect *)cvGetSeqElem(list->rects, idx);
-  xywh[0] = r->x;
-  xywh[1] = r->y;
-  xywh[2] = r->width;
-  xywh[3] = r->height;
+  
+  Rectangle res = {r->x, r->y, r->width, r->height};
+  return res;
 }
 
 void flandmark_binding_rects_free(void * rects) {
@@ -79,8 +81,10 @@ void flandmark_binding_rects_free(void * rects) {
   delete list;
 }
 
-void * flandmark_binding_model_init(const char * filename) {
-  return (void *)flandmark_init(filename);
+void * flandmark_binding_model_init(char * filename) {
+  void * res = (void *)flandmark_init(filename);
+  free(filename);
+  return res;
 }
 
 void flandmark_binding_model_free(void * model) {
@@ -92,9 +96,19 @@ uint8_t flandmark_binding_model_M(void * model) {
   return m->data.options.M;
 }
 
-int flandmark_binding_model_detect(void * model, void * image,
-  double * landmarks, int * box) {
+DetectResult flandmark_binding_model_detect(void * model, void * image,
+  Rectangle box) {
   FLANDMARK_Model * m = (FLANDMARK_Model *)model;
-  return flandmark_detect((IplImage *)image, box, m, landmarks);
+  double * result = (double *)malloc(sizeof(double) * m->data.options.M * 2);
+  int boxList[4] = {box.x, box.y, box.x+box.width, box.y+box.height};
+  int numVal = flandmark_detect((IplImage *)image, boxList, m, result);
+  if (numVal != 0) {
+    free(result);
+    DetectResult res = {numVal, NULL};
+    return res;
+  } else {
+    DetectResult res = {0, result};
+    return res;
+  }
 }
 

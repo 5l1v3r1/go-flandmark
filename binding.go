@@ -49,9 +49,8 @@ func (c *Cascade) Detect(img *Image, factor float64, minNeighbors int,
 	count := int(C.flandmark_binding_rects_count(rects))
 	list := make([]Rect, count)
 	for i := 0; i < count; i++ {
-		var resList [4]C.int
-		C.flandmark_binding_rects_get(rects, C.int(i), &resList[0])
-		list[i] = NewRectFromC(resList)
+		cRect := C.flandmark_binding_rects_get(rects, C.int(i))
+		list[i] = NewRectFromC(cRect)
 	}
 	C.flandmark_binding_rects_free(rects)
 	return list, nil
@@ -76,8 +75,10 @@ func NewRGBAImage(data []byte, width int, height int) (*Image, error) {
 	if len(data) != 4*width*height {
 		return nil, ErrDataSize
 	}
-	buffer := (*C.uint8_t)(unsafe.Pointer(&data[0]))
-	v := C.flandmark_binding_image_rgba(buffer, C.int(width), C.int(height))
+	cBuffer := C.malloc(C.size_t(width * height * 4))
+	cSlice := (*[0x7fffffff]byte)(cBuffer)[0 : width*height*4]
+	copy(cSlice, data)
+	v := C.flandmark_binding_image_rgba(cBuffer, C.int(width), C.int(height))
 	if v == nil {
 		return nil, ErrUnknown
 	}
@@ -92,8 +93,10 @@ func NewGrayImage(data []byte, width int, height int) (*Image, error) {
 	if len(data) != width*height {
 		return nil, ErrDataSize
 	}
-	buffer := (*C.uint8_t)(unsafe.Pointer(&data[0]))
-	v := C.flandmark_binding_image_gray(buffer, C.int(width), C.int(height))
+	cBuffer := C.malloc(C.size_t(width * height))
+	cSlice := (*[0x7fffffff]byte)(cBuffer)[0 : width*height]
+	copy(cSlice, data)
+	v := C.flandmark_binding_image_gray(cBuffer, C.int(width), C.int(height))
 	if v == nil {
 		return nil, ErrUnknown
 	}
@@ -142,22 +145,25 @@ func (m *Model) Detect(img *Image, box Rect) ([]Point, error) {
 	if !m.valid() || !img.valid() {
 		return nil, ErrBadArgument
 	}
-	pointCount := int(C.flandmark_binding_model_M(m.pointer))
-	data := make([]C.double, pointCount*2)
-	boxList := box.CList()
-	ret := C.flandmark_binding_model_detect(m.pointer, img.pointer, &data[0],
-		&boxList[0])
-	if ret == 1 {
+	
+	// Run the call.
+	cBox := box.CRect()
+	ret := C.flandmark_binding_model_detect(m.pointer, img.pointer, cBox)
+	if ret.status == 1 {
 		return nil, ErrNormalize
-	} else if ret == 2 {
+	} else if ret.status == 2 {
 		return nil, ErrDetect
 	}
 
 	// Convert the data points
-	res := make([]Point, len(data)/2)
-	for i := 0; i < len(data) - 1; i += 2 {
+	dataPtr := unsafe.Pointer(ret.coords)
+	count := int(C.flandmark_binding_model_M(m.pointer)) * 2
+	data := (*[0x7fffffff]C.double)(dataPtr)[0 : count]
+	res := make([]Point, count/2)
+	for i := 0; i < count-1; i += 2 {
 		res[i / 2] = Point{int(data[i]), int(data[i+1])}
 	}
+	C.free(dataPtr)
 	return res, nil
 }
 
@@ -181,15 +187,15 @@ type Rect struct {
 	Size  Size
 }
 
-// NewRectFromC creates a rectangle from a C array [x, y, width, height].
-func NewRectFromC(l [4]C.int) Rect {
-	return Rect{Point{int(l[0]), int(l[1])}, Size{int(l[2]), int(l[3])}}
+// NewRectFromC creates a rectangle from a C struct.
+func NewRectFromC(l C.Rectangle) Rect {
+	return Rect{Point{int(l.x), int(l.y)}, Size{int(l.width), int(l.height)}}
 }
 
-// CList creates a C array of the form [x, y, x+width, x+height].
-func (r Rect) CList() [4]C.int {
-	return [4]C.int{C.int(r.Point.X), C.int(r.Point.Y),
-		C.int(r.Point.X + r.Size.Width), C.int(r.Point.Y + r.Size.Height)}
+// CRect creates a C struct from the rectangle.
+func (r Rect) CRect() C.Rectangle {
+	return C.Rectangle{C.int(r.Point.X), C.int(r.Point.Y), C.int(r.Size.Width),
+		C.int(r.Size.Height)}
 }
 
 // Size is a two-dimensional integral rectangular size.

@@ -14,7 +14,7 @@ Assuming you already have OpenCV installed and are connected to the internet, th
 
 # Usage
 
-The binding itself couldn't be simpler. You can see the [full documentation](http://godoc.org/github.com/unixpickle/go-flandmark) for more details, or you can look at the wonderful [demonstrations](demo).
+The exposed API couldn't be simpler. You can see the [full documentation](http://godoc.org/github.com/unixpickle/go-flandmark) for more details, or you can look at the wonderful [demonstrations](demo).
 
 In essence, the API has a few types that you will need to work with. These types are as follows:
 
@@ -34,5 +34,4 @@ Once you have all of these objects created, you will use the `Cascade` to iterat
 
 # TODO
 
- * Do not pass Go pointers int oC
  * Use some sort of asset->source utility to package the default cascade and model into the code itself.
